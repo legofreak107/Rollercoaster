@@ -1,0 +1,9 @@
+name: RollerCoaster
+main: me.legofreak107.rollercoaster.Main
+version: 1.0
+description: >
+             RollerCoaster by: legofreak107.
+
+commands:
+  rc:
+    description: RL Main command!
