@@ -50,22 +50,38 @@ import me.legofreak107.rollercoaster.objects.Train;
 
 public class Main extends JavaPlugin implements Listener{
 	
+	//Save and load file (Used for config management)
 	public SaveAndLoad sal = new SaveAndLoad();
+	
+	//Seat info (Used to get the store the Seats to the connected ArmorStands)
 	public HashMap<ArmorStand, Seat> seatInfo = new HashMap<ArmorStand, Seat>();
+	
+	//Stored Tracks
 	public ArrayList<Track> tracks = new ArrayList<Track>();
+	
+	//Stored Trains
 	public ArrayList<Train> trains = new ArrayList<Train>();
+	
+	//Stored visible points (While creating a path)
 	public ArrayList<ArmorStand> pointsVisible = new ArrayList<ArmorStand>();
 	
-	HashMap<Chunk, List<Cart>> cartsInChunk = new HashMap<Chunk, List<Cart>>();
-	public HashMap<Cart, Integer> sound = new HashMap<Cart, Integer>();
-	
+	//Stored loops (Keep track of looped trains with amount of seconds)
 	public HashMap<Train, Integer> loop = new HashMap<Train, Integer>();
+	
+	//Enabled language file
 	public String langFile;
+	
+	//Are trains spawned on startup
 	public Boolean trainsSpawned = false;
 	
+	//List of sign receivers to disable/enable
 	public HashMap<Integer,Receiver> receivers = new HashMap<Integer,Receiver>();
+	
+	//Current id for receiver signs
 	public Integer id = 0;
 	
+	
+	//Startup (Start the timer to run the trains)
 	public void runStartup(){
 		MoveCoaster mc = new MoveCoaster();
 		mc.plugin = this;
@@ -82,16 +98,7 @@ public class Main extends JavaPlugin implements Listener{
 		}, 0L, 1L);
 	}
 	
-	int round(double i, int v){
-		if(i < 0){
-
-		    return (int) (Math.ceil(i/v) * v);	
-		}else{
-
-		    return (int) (Math.floor(i/v) * v);
-		}
-	}
-	
+	//Enable/Disable receiver signs
 	public void setActive(String name, Boolean active){
 		if(active){
 			for(World w : Bukkit.getWorlds()){
@@ -133,8 +140,8 @@ public class Main extends JavaPlugin implements Listener{
 		}
 	}
 
+	//Used to load in coasters from a bezier curve in blender (BETA)
 	public void loadCoaster(String name, World w) throws NumberFormatException, IOException{
-		   // Load file line by line async
 		ArrayList<PathPoint> track = new ArrayList<PathPoint>();
 		Integer i = 0;
 		   for(String s : Files.readAllLines(Paths.get(getDataFolder() + "/beziercurves/"+name+".txt"))){
@@ -143,7 +150,6 @@ public class Main extends JavaPlugin implements Listener{
 		      Double y= Double.valueOf(splitted[1]);
 		      Double z = Double.valueOf(splitted[2]);
 		      Double tilt = Double.valueOf(splitted[3]);
-		      // add this values to a sort of TrackPoint class
 		      PathPoint t = new PathPoint(x,y,z,tilt);
 		      track.add(t);
 		      if(i > 100){
@@ -167,9 +173,17 @@ public class Main extends JavaPlugin implements Listener{
 			tracks.add(t);
 	}
 	
+	//Round up to nearest multiple of x
+	int round(double i, int v){
+		if(i < 0){
+		    return (int) (Math.ceil(i/v) * v);	
+		}else{
+		    return (int) (Math.floor(i/v) * v);
+		}
+	}
 	
-	
-	public void wait1(int waitTime, int oldSpeed, Train t){
+	//Wait x amount of seconds. After that resume the ride
+	public void wait(int waitTime, int oldSpeed, Train t){
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable(){
 			public void run(){
 				t.speed = oldSpeed;
@@ -178,6 +192,7 @@ public class Main extends JavaPlugin implements Listener{
 		}, 20 * waitTime);
 	}
 	
+	//Delay for the loop to restart
 	public void startLoop(Train t){
 		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable(){
 			public void run(){
@@ -201,6 +216,7 @@ public class Main extends JavaPlugin implements Listener{
 		}, 20L * loop.get(t));
 	}
 	
+	//Start of the plugin
 	@Override
 	public void onEnable(){
 		Bukkit.getPluginManager().registerEvents(new ChunkUnload(this), this);
@@ -213,22 +229,22 @@ public class Main extends JavaPlugin implements Listener{
 		lm.generateLanguageFile(this);
 		getAPI().plugin = this;
 		if(Bukkit.getOnlinePlayers().size() > 0){
-			if(getCustomSaveConfig().contains("Saved")){
-				for(String s : getCustomSaveConfig().getConfigurationSection("Saved").getKeys(false)){
-			        Integer loopSeconds = getCustomSaveConfig().getInt("Saved." + s + ".loopSeconds");
-			        Integer cartOffset = getCustomSaveConfig().getInt("Saved." + s + ".cartOffset");
-			        Integer minSpeed = getCustomSaveConfig().getInt("Saved." + s + ".minSpeed");
-			        Integer maxSpeed = getCustomSaveConfig().getInt("Saved." + s + ".maxSpeed");
-			        Integer trainLength = getCustomSaveConfig().getInt("Saved." + s + ".trainLength");
-			        Boolean hasLoco = getCustomSaveConfig().getBoolean("Saved." + s + ".hasLoco");
-			        Boolean isSmall = getCustomSaveConfig().getBoolean("Saved." + s + ".isSmall");
-			        String trainName = getCustomSaveConfig().getString("Saved." + s + ".trainName");
+			if(sal.getCustomSaveConfig().contains("Saved")){
+				for(String s : sal.getCustomSaveConfig().getConfigurationSection("Saved").getKeys(false)){
+			        Integer loopSeconds = sal.getCustomSaveConfig().getInt("Saved." + s + ".loopSeconds");
+			        Integer cartOffset = sal.getCustomSaveConfig().getInt("Saved." + s + ".cartOffset");
+			        Integer minSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".minSpeed");
+			        Integer maxSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".maxSpeed");
+			        Integer trainLength = sal.getCustomSaveConfig().getInt("Saved." + s + ".trainLength");
+			        Boolean hasLoco = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".hasLoco");
+			        Boolean isSmall = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".isSmall");
+			        String trainName = sal.getCustomSaveConfig().getString("Saved." + s + ".trainName");
 			        Train t = getAPI().spawnTrain(trainName, trainLength, hasLoco, getAPI().getTrack(s).origin, isSmall, getAPI().getTrack(s), minSpeed, maxSpeed, cartOffset);
 			        loop.put(t, loopSeconds);
 			        getAPI().startTrain(s);
-			        getCustomSaveConfig().set("Saved." + s, null);
+			        sal.getCustomSaveConfig().set("Saved." + s, null);
 				}
-		        getCustomSaveConfig().set("Saved", null);
+		        sal.getCustomSaveConfig().set("Saved", null);
 		        trainsSpawned = true;
 			}
 		}
@@ -246,65 +262,9 @@ public class Main extends JavaPlugin implements Listener{
 			}
 		}, 5L);
 	}
+
 	
-	private FileConfiguration customSaveConfig = null;
-	private File customSaveConfigFile = null;
-	
-	public void reloadCustomSaveConfig() {
-	    if (customSaveConfigFile == null) {
-	    	customSaveConfigFile = new File(getDataFolder(), "save.yml");
-	    }
-	    customSaveConfig = YamlConfiguration.loadConfiguration(customSaveConfigFile);
-	}
-	
-	public FileConfiguration getCustomSaveConfig() {
-	    if (customSaveConfig == null) {
-	        reloadCustomSaveConfig();
-	    }
-	    return customSaveConfig;
-	}
-	
-	public void saveCustomSaveConfig() {
-	    if (customSaveConfig == null || customSaveConfigFile == null) {
-	        return;
-	    }
-	    try {
-	        getCustomSaveConfig().save(customSaveConfigFile);
-	    } catch (IOException ex) {
-	        getLogger().log(Level.SEVERE, "Could not save config to " + customSaveConfigFile, ex);
-	    }
-	}
-	
-	
-	private FileConfiguration customLangConfig = null;
-	private File customLangConfigFile = null;
-	
-	public void reloadCustomLangConfig(String name) {
-	    if (customLangConfigFile == null) {
-	    	customLangConfigFile = new File(getDataFolder(), name+".yml");
-	    }
-	    customLangConfig = YamlConfiguration.loadConfiguration(customLangConfigFile);
-	}
-	
-	public FileConfiguration getCustomLangConfig(String name) {
-	    if (customLangConfig == null) {
-	        reloadCustomLangConfig(name);
-	    }
-	    return customLangConfig;
-	}
-	
-	public void saveCustomLangConfig(String name) {
-	    if (customLangConfig == null || customLangConfigFile == null) {
-	        return;
-	    }
-	    try {
-	        getCustomLangConfig(name).save(customLangConfigFile);
-	    } catch (IOException ex) {
-	        getLogger().log(Level.SEVERE, "Could not save config to " + customLangConfigFile, ex);
-	    }
-	}
-	 
-	
+	//Disable plugin
 	@Override
 	public void onDisable(){
 	    Iterator<?> it = loop.entrySet().iterator();
@@ -312,15 +272,15 @@ public class Main extends JavaPlugin implements Listener{
 	        Map.Entry pair = (Map.Entry)it.next();
 	        Train t = (Train) pair.getKey();
 	        Integer time = (Integer) pair.getValue();
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".loopSeconds", time);
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".cartOffset", t.cartOffset);
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".minSpeed", t.minSpeed);
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".maxSpeed", t.maxSpeed);
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".trainLength", t.carts.size());
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".hasLoco", t.hasLoco);
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".isSmall", t.carts.get(0).holder.isSmall());
-	        getCustomSaveConfig().set("Saved." + t.track.name + ".trainName", t.trainName);
-	        saveCustomSaveConfig();
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".loopSeconds", time);
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".cartOffset", t.cartOffset);
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".minSpeed", t.minSpeed);
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".maxSpeed", t.maxSpeed);
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".trainLength", t.carts.size());
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".hasLoco", t.hasLoco);
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".isSmall", t.carts.get(0).holder.isSmall());
+	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".trainName", t.trainName);
+	        sal.saveCustomSaveConfig();
 	        it.remove(); // avoids a ConcurrentModificationException
 	    }
 		for(ArmorStand ar : pointsVisible){
@@ -341,6 +301,7 @@ public class Main extends JavaPlugin implements Listener{
 		}
 	}
 	
+	//Check if input string is a number
     public boolean checkMe(String s) {
         boolean amIValid = false;
         try {
@@ -353,6 +314,8 @@ public class Main extends JavaPlugin implements Listener{
         }
         return amIValid;
       }
+    
+    //Check if input string is a double
     public boolean checkMeb(String s) {
         boolean amIValid = false;
         try {
@@ -366,243 +329,286 @@ public class Main extends JavaPlugin implements Listener{
         return amIValid;
       }
     
+    //Get message from the language file
     public String getMessage(String path){
-    	return ((String) getCustomLangConfig(langFile).get(path)).replace("&", "§");
+    	return ((String) sal.getCustomLangConfig(langFile).get(path)).replace("&", "§");
     }
     
+    //On command
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		//Main check for /rc
 		if(cmd.getName().equalsIgnoreCase("rc")){
+			//Check if arguments are more then 0
 			if(args.length > 0){
-			if(args[0].equalsIgnoreCase("spawntrain")){
-				if(sender.hasPermission("rollercoaster.spawntrain")) {
-				if(args.length == 9){
-					String track = args[1];
-					String train = args[2];
-					if(checkMe(args[3]) && checkMe(args[4]) && checkMe(args[5]) && checkMe(args[6]) && checkMe(args[7]) && checkMe(args[8])) {
-						if(getAPI().isTrack(track)) {
-							if(getConfig().contains("Trains." + train + "cart")) {
-								Integer length = Integer.parseInt(args[3]);
-								Integer loco = Integer.parseInt(args[4]);
-								Integer small = Integer.parseInt(args[8]);
-								Boolean tilt = false;
-								Boolean hasLoc = false;
-								Boolean isSmall = false;
-								if(loco == 1)
-									hasLoc = true;
-								if(small == 1)
-									isSmall = true;
-								Train t = getAPI().spawnTrain(train, length, hasLoc, ((Player) sender).getLocation(), isSmall, getAPI().getTrack(track), Integer.parseInt(args[6]), Integer.parseInt(args[7]), Integer.parseInt(args[5]));
-								t.track = getAPI().getTrackStorage(track);
-								t.tilt = tilt;
-								t.cartOffset = Integer.parseInt(args[5]);
-								t.minSpeed = Integer.parseInt(args[6]);
-								t.maxSpeed = Integer.parseInt(args[7]);
-								trains.add(t);
-								sender.sendMessage(getMessage("Message.trainSpawned"));
+				//Check if first argument is spawntrain (/rc spawntrain)
+				if(args[0].equalsIgnoreCase("spawntrain")){
+					//Check if user has permissions
+					if(sender.hasPermission("rollercoaster.spawntrain")) {
+						//Check if command has the correct amount of arguments
+						if(args.length == 9){
+							String track = args[1];
+							String train = args[2];
+							//Check if all the arguments entered are valid
+							if(checkMe(args[3]) && checkMe(args[4]) && checkMe(args[5]) && checkMe(args[6]) && checkMe(args[7]) && checkMe(args[8])) {
+								if(getAPI().isTrack(track)) {
+									if(getConfig().contains("Trains." + train + "cart")) {
+										//Spawn in train using the given args
+										Integer length = Integer.parseInt(args[3]);
+										Integer loco = Integer.parseInt(args[4]);
+										Integer small = Integer.parseInt(args[8]);
+										Boolean tilt = false;
+										Boolean hasLoc = false;
+										Boolean isSmall = false;
+										if(loco == 1)
+											hasLoc = true;
+										if(small == 1)
+											isSmall = true;
+										Train t = getAPI().spawnTrain(train, length, hasLoc, ((Player) sender).getLocation(), isSmall, getAPI().getTrack(track), Integer.parseInt(args[6]), Integer.parseInt(args[7]), Integer.parseInt(args[5]));
+										t.track = getAPI().getTrackStorage(track);
+										t.tilt = tilt;
+										t.cartOffset = Integer.parseInt(args[5]);
+										t.minSpeed = Integer.parseInt(args[6]);
+										t.maxSpeed = Integer.parseInt(args[7]);
+										trains.add(t);
+										sender.sendMessage(getMessage("Message.trainSpawned"));
+									}else {
+										//Train is not valid
+										sender.sendMessage(getMessage("Error.invalidTrain"));
+									}	
+								}else {
+									//Track is not valid
+									sender.sendMessage(getMessage("Error.invalidTrack"));
+								}
 							}else {
-								sender.sendMessage(getMessage("Error.invalidTrain"));
-							}	
-						}else {
-							sender.sendMessage(getMessage("Error.invalidTrack"));
+								//Wrong command usage
+								sender.sendMessage(getMessage("Usage.spawnTrain"));
+							}
+						}else{
+							//Wrong command usage
+							sender.sendMessage(getMessage("Usage.spawnTrain"));
 						}
 					}else {
-						sender.sendMessage(getMessage("Usage.spawnTrain"));
+						//User does not have permissions
+						sender.sendMessage(getMessage("Error.noPermissions"));
 					}
-				}else{
-					sender.sendMessage(getMessage("Usage.spawnTrain"));
-				}
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("starttrain")){
-				if(sender.hasPermission("rollercoaster.starttrain")) {
-				if(args.length == 2){
-					String track = args[1];
-					if(getAPI().isTrack(track)) {
-						getAPI().startTrain(track);
-						sender.sendMessage(getMessage("Message.trainStarted"));
-					}else{
-						sender.sendMessage(getMessage("Error.invalidTrack"));
-					}
-				}else{
-					sender.sendMessage(getMessage("Usage.startTrain"));
-				}
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("loadcoaster")){
-				if(sender.hasPermission("rollercoaster.loadcoaster")) {
-				if(args.length == 2){
-					String track = args[1];
-					try {
-						loadCoaster(track, ((Player)sender).getWorld());
-					} catch (NumberFormatException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}else{
-					sender.sendMessage(getMessage("Usage.startTrain"));
-				}
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("loop")){
-				if(sender.hasPermission("rollercoaster.loop")) {
-				if(args.length == 3){
-					String track = args[1];
-					if(checkMe(args[2])){
-						if(getAPI().isTrack(track)) {
-							Train train = getAPI().getTrain(track);
-							sender.sendMessage(getMessage("Message.loopSet").replace("%seconds%", args[2]).replace("%track%", track));
-							loop.put(train, Integer.parseInt(args[2]));
+				//Check if first argument is starttrain (/rc starttrain)
+				}else if(args[0].equalsIgnoreCase("starttrain")){
+					//Check if user has permissions
+					if(sender.hasPermission("rollercoaster.starttrain")) {
+						//Check if command entered has correct amount of arguments
+						if(args.length == 2){
+							String track = args[1];
+							//Check if second argument is a track
+							if(getAPI().isTrack(track)) {
+								//Start the ride
+								getAPI().startTrain(track);
+								sender.sendMessage(getMessage("Message.trainStarted"));
+							}else{
+								//Entered track is not valid
+								sender.sendMessage(getMessage("Error.invalidTrack"));
+							}
 						}else{
-							sender.sendMessage(getMessage("Error.invalidTrack"));
+							//Entered command has wrong syntax
+							sender.sendMessage(getMessage("Usage.startTrain"));
+						}
+					}else {
+						//User does not have permissions
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				//BETA (used for the bezier curve tracks) IGNORE THIS
+				}else if(args[0].equalsIgnoreCase("loadcoaster")){
+					if(sender.hasPermission("rollercoaster.loadcoaster")) {
+					if(args.length == 2){
+						String track = args[1];
+						try {
+							loadCoaster(track, ((Player)sender).getWorld());
+						} catch (NumberFormatException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
 						}
 					}else{
-						sender.sendMessage(getMessage("Usage.loop"));
+						sender.sendMessage(getMessage("Usage.startTrain"));
 					}
-				}else{
-					sender.sendMessage(getMessage("Usage.loop"));
-				}
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("stoptrain")){
-				if(sender.hasPermission("rollercoaster.stoptrain")) {
-				if(args.length == 2){
-					String track = args[1];
-					if(getAPI().isTrack(track)) {
-						Train train = getAPI().getTrain(track);
-						train.inStation = false;
-						train.riding = false;
-						TrainStopEvent event = new TrainStopEvent("TrainStopEvent", train);
-						Bukkit.getServer().getPluginManager().callEvent(event);
-						sender.sendMessage(getMessage("Message.trainStopped"));
-					}else{
-						sender.sendMessage(getMessage("Error.invalidTrack"));
+					}else {
+						sender.sendMessage(getMessage("Error.noPermissions"));
 					}
-				}else{
-					sender.sendMessage(getMessage("usage.stopTrain"));
-				}
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("addpoint")){
-				if(sender.hasPermission("rollercoaster.createtrack")) {
-					if(CustomPathBuilder.vectorList.isEmpty()){
-			    	CustomPathBuilder.addPoint(((Player) sender).getLocation());
-			    	lastLoc = ((Player) sender).getLocation();
-					ArmorStand ar = (ArmorStand) ((Player) sender).getLocation().getWorld().spawnEntity(((Player) sender).getLocation(), EntityType.ARMOR_STAND);
-					ar.setGravity(false);
-					ar.setCustomName("Point");
-					pointsVisible.add(ar);
-				}else{
-					Location prevPoint = lastLoc;
-					Location newLoc = ((Player) sender).getLocation();
-                    Vector vector = getDirectionBetweenLocations(prevPoint, newLoc);
-                    int i2 = 1;
-                    for (double i = 1; i <= prevPoint.distance(newLoc); i += 0.5) {
-                        vector.multiply(i);
-                        prevPoint.add(vector);
-                        if(i2 < 3){
-                        	i2 ++;
-                        }else{
-                        	CustomPathBuilder.addPoint(prevPoint.clone());
-							ArmorStand ar = (ArmorStand) prevPoint.getWorld().spawnEntity(prevPoint, EntityType.ARMOR_STAND);
-							lastLoc = prevPoint.clone();
-							ar.setGravity(false);
-							ar.setCustomName("Point");
-							pointsVisible.add(ar);
-							i2 = 0;
-                        }
-						prevPoint.subtract(vector);
-                        vector.normalize();
-                    }
-				}
-				sender.sendMessage(getMessage("Message.addPoint"));
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("removepoint")){
-				if(sender.hasPermission("rollercoaster.createtrack")) {
-				CustomPathBuilder.removePoint();
-				sender.sendMessage(getMessage("Message.removePoint"));
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("startpath")){
-				if(sender.hasPermission("rollercoaster.createtrack")) {
-				CustomPathBuilder.origin = ((Player)sender).getLocation();
-				CustomPathBuilder.vectorList.clear();
-				sender.sendMessage(getMessage("Message.pathCreated1"));
-				sender.sendMessage(getMessage("Message.pathCreated2"));
-				}else {
-					sender.sendMessage(getMessage("Error.noPermissions"));
-				}
-			}else if(args[0].equalsIgnoreCase("train")){
-				if(sender.hasPermission("rollercoaster.createtrain")) {
-				if(args.length > 1){
-					if(args[1].equalsIgnoreCase("create")){
-						if(args.length == 5 && checkMe(args[3]) && checkMe(args[4])){
-							Cart c = new Cart();
-							c.name = args[2] + "cart";
-
-							ArrayList<Seat> seats = new ArrayList<Seat>();
-							for(int i = 0; i < Integer.parseInt(args[4]); i ++){
-								Seat s = new Seat();
-								s.fb = 0;
-								s.lr = 0;
-								seats.add(s);
-							}
-							c.seats = seats;
-							c.skin = ((Player)sender).getInventory().getItemInMainHand();
-							sal.saveTrain(c);
-							
-							Cart c2 = new Cart();
-							c2.name = args[2] + "loco";
-
-							ArrayList<Seat> seats2 = new ArrayList<Seat>();
-							for(int i = 0; i < Integer.parseInt(args[3]); i ++){
-								Seat s = new Seat();
-								s.fb = 0;
-								s.lr = 0;
-								seats2.add(s);
-							}
-							c2.seats = seats2;
-							c2.skin = ((Player)sender).getInventory().getItemInMainHand();
-							sal.saveTrain(c2);
-							sender.sendMessage(getMessage("Message.trainCreated"));
-						}else{
-							sender.sendMessage(getMessage("Usage.createTrain"));
-						}
-					}else
-					if(args[1].equalsIgnoreCase("chairs")){
-						if(args[2].equalsIgnoreCase("pos")){
-							if(args.length == 8){
-								String type = args[7];
-								String name = args[3];
-								if(type.equalsIgnoreCase("loco")){
-									name = name+"loco";
-								}else if(type.equalsIgnoreCase("cart")){
-									name = name+"cart";
+				//Check if first argument is loop (/rc loop)
+				}else if(args[0].equalsIgnoreCase("loop")){
+					//Check if user has permissions
+					if(sender.hasPermission("rollercoaster.loop")) {
+						//Check if command has correct amount of args
+						if(args.length == 3){
+							String track = args[1];
+							//Check if given args are correct
+							if(checkMe(args[2])){
+								if(getAPI().isTrack(track)) {
+									//Set the loop for the given train
+									Train train = getAPI().getTrain(track);
+									sender.sendMessage(getMessage("Message.loopSet").replace("%seconds%", args[2]).replace("%track%", track));
+									loop.put(train, Integer.parseInt(args[2]));
+								}else{
+									//Entered track is not valid
+									sender.sendMessage(getMessage("Error.invalidTrack"));
 								}
-								if(getAPI().isTrain(name)) {
-									if(checkMe(args[4])) {
-										if(checkMeb(args[5])) {
-											if(checkMeb(args[6])) {
-													Integer number = Integer.parseInt(args[4]);
-													
-													if(number <= getConfig().getInt("Trains." + name + ".seatcount") && number > -1){
-														Double LR = Double.parseDouble(args[5]);
-														Double FB = Double.parseDouble(args[6]);
-														getConfig().set("Trains."+name+".seat"+number+".offsetlr", LR);
-														getConfig().set("Trains."+name+".seat"+number+".offsetfb", FB);
-														saveConfig();
-														sender.sendMessage(getMessage("Message.trainEdited"));
-													}else{
-														sender.sendMessage(getMessage("Error.invalidSeatNumber"));
-													}
+							}else{
+								//Command syntax is invalid
+								sender.sendMessage(getMessage("Usage.loop"));
+							}
+						}else{
+							//Command syntax is invalid
+							sender.sendMessage(getMessage("Usage.loop"));
+						}
+					}else {
+						//User does not have permissions
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				//Check if first argument is stoptrain (/rc stoptrain)
+				}else if(args[0].equalsIgnoreCase("stoptrain")){
+					//Check if user has permissions
+					if(sender.hasPermission("rollercoaster.stoptrain")) {
+						//Check if command has the right amount of args
+						if(args.length == 2){
+							String track = args[1];
+							//Check if given args are correct
+							if(getAPI().isTrack(track)) {
+								//Stop the given train
+								Train train = getAPI().getTrain(track);
+								train.inStation = false;
+								train.riding = false;
+								TrainStopEvent event = new TrainStopEvent("TrainStopEvent", train);
+								Bukkit.getServer().getPluginManager().callEvent(event);
+								sender.sendMessage(getMessage("Message.trainStopped"));
+							}else{
+								//Given track is invalid
+								sender.sendMessage(getMessage("Error.invalidTrack"));
+							}
+						}else{
+							//Command has wrong syntax
+							sender.sendMessage(getMessage("usage.stopTrain"));
+						}
+					}else {
+						//User does not have permissions
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				}else if(args[0].equalsIgnoreCase("addpoint")){
+					if(sender.hasPermission("rollercoaster.createtrack")) {
+						if(CustomPathBuilder.vectorList.isEmpty()){
+				    	CustomPathBuilder.addPoint(((Player) sender).getLocation());
+				    	lastLoc = ((Player) sender).getLocation();
+						ArmorStand ar = (ArmorStand) ((Player) sender).getLocation().getWorld().spawnEntity(((Player) sender).getLocation(), EntityType.ARMOR_STAND);
+						ar.setGravity(false);
+						ar.setCustomName("Point");
+						pointsVisible.add(ar);
+					}else{
+						Location prevPoint = lastLoc;
+						Location newLoc = ((Player) sender).getLocation();
+	                    Vector vector = getDirectionBetweenLocations(prevPoint, newLoc);
+	                    int i2 = 1;
+	                    for (double i = 1; i <= prevPoint.distance(newLoc); i += 0.5) {
+	                        vector.multiply(i);
+	                        prevPoint.add(vector);
+	                        if(i2 < 3){
+	                        	i2 ++;
+	                        }else{
+	                        	CustomPathBuilder.addPoint(prevPoint.clone());
+								ArmorStand ar = (ArmorStand) prevPoint.getWorld().spawnEntity(prevPoint, EntityType.ARMOR_STAND);
+								lastLoc = prevPoint.clone();
+								ar.setGravity(false);
+								ar.setCustomName("Point");
+								pointsVisible.add(ar);
+								i2 = 0;
+	                        }
+							prevPoint.subtract(vector);
+	                        vector.normalize();
+	                    }
+					}
+					sender.sendMessage(getMessage("Message.addPoint"));
+					}else {
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				}else if(args[0].equalsIgnoreCase("removepoint")){
+					if(sender.hasPermission("rollercoaster.createtrack")) {
+					CustomPathBuilder.removePoint();
+					sender.sendMessage(getMessage("Message.removePoint"));
+					}else {
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				}else if(args[0].equalsIgnoreCase("startpath")){
+					if(sender.hasPermission("rollercoaster.createtrack")) {
+					CustomPathBuilder.origin = ((Player)sender).getLocation();
+					CustomPathBuilder.vectorList.clear();
+					sender.sendMessage(getMessage("Message.pathCreated1"));
+					sender.sendMessage(getMessage("Message.pathCreated2"));
+					}else {
+						sender.sendMessage(getMessage("Error.noPermissions"));
+					}
+				}else if(args[0].equalsIgnoreCase("train")){
+					if(sender.hasPermission("rollercoaster.createtrain")) {
+					if(args.length > 1){
+						if(args[1].equalsIgnoreCase("create")){
+							if(args.length == 5 && checkMe(args[3]) && checkMe(args[4])){
+								Cart c = new Cart();
+								c.name = args[2] + "cart";
+	
+								ArrayList<Seat> seats = new ArrayList<Seat>();
+								for(int i = 0; i < Integer.parseInt(args[4]); i ++){
+									Seat s = new Seat();
+									s.fb = 0;
+									s.lr = 0;
+									seats.add(s);
+								}
+								c.seats = seats;
+								c.skin = ((Player)sender).getInventory().getItemInMainHand();
+								sal.saveTrain(c);
+								
+								Cart c2 = new Cart();
+								c2.name = args[2] + "loco";
+	
+								ArrayList<Seat> seats2 = new ArrayList<Seat>();
+								for(int i = 0; i < Integer.parseInt(args[3]); i ++){
+									Seat s = new Seat();
+									s.fb = 0;
+									s.lr = 0;
+									seats2.add(s);
+								}
+								c2.seats = seats2;
+								c2.skin = ((Player)sender).getInventory().getItemInMainHand();
+								sal.saveTrain(c2);
+								sender.sendMessage(getMessage("Message.trainCreated"));
+							}else{
+								sender.sendMessage(getMessage("Usage.createTrain"));
+							}
+						}else
+						if(args[1].equalsIgnoreCase("chairs")){
+							if(args[2].equalsIgnoreCase("pos")){
+								if(args.length == 8){
+									String type = args[7];
+									String name = args[3];
+									if(type.equalsIgnoreCase("loco")){
+										name = name+"loco";
+									}else if(type.equalsIgnoreCase("cart")){
+										name = name+"cart";
+									}
+									if(getAPI().isTrain(name)) {
+										if(checkMe(args[4])) {
+											if(checkMeb(args[5])) {
+												if(checkMeb(args[6])) {
+														Integer number = Integer.parseInt(args[4]);
+														
+														if(number <= getConfig().getInt("Trains." + name + ".seatcount") && number > -1){
+															Double LR = Double.parseDouble(args[5]);
+															Double FB = Double.parseDouble(args[6]);
+															getConfig().set("Trains."+name+".seat"+number+".offsetlr", LR);
+															getConfig().set("Trains."+name+".seat"+number+".offsetfb", FB);
+															saveConfig();
+															sender.sendMessage(getMessage("Message.trainEdited"));
+														}else{
+															sender.sendMessage(getMessage("Error.invalidSeatNumber"));
+														}
+												}else{
+													sender.sendMessage(getMessage("Error.noNumber"));
+												}
 											}else{
 												sender.sendMessage(getMessage("Error.noNumber"));
 											}
@@ -610,65 +616,62 @@ public class Main extends JavaPlugin implements Listener{
 											sender.sendMessage(getMessage("Error.noNumber"));
 										}
 									}else{
-										sender.sendMessage(getMessage("Error.noNumber"));
+										sender.sendMessage(getMessage("Error.invalidTrain"));
 									}
 								}else{
-									sender.sendMessage(getMessage("Error.invalidTrain"));
+									sender.sendMessage(getMessage("Usage.trainChairPos"));
 								}
-							}else{
-								sender.sendMessage(getMessage("Usage.trainChairPos"));
 							}
-						}
-					}else if(args[1].equalsIgnoreCase("setskin")){
-							if(args.length == 4){
-								String name = args[2];
-									String type = args[3];
-									if(type.equalsIgnoreCase("Loco")) {
-										if(getAPI().isTrain(name + "loco")) {
-											getConfig().set("Trains."+name+"loco.skin.materialid", ((Player)sender).getInventory().getItemInMainHand().getTypeId());
-											getConfig().set("Trains."+name+"loco.skin.materialdata", ((Player)sender).getInventory().getItemInMainHand().getDurability() + "");
-											saveConfig();
-											sender.sendMessage(getMessage("Message.trainEdited"));
-										}else {
-											sender.sendMessage(getMessage("Error.invalidTrain"));
-										}
-									}else 
-										if(type.equalsIgnoreCase("Cart")) {
-											if(getAPI().isTrain(name + "cart")) {
-												getConfig().set("Trains."+name+"cart.skin.materialid", ((Player)sender).getInventory().getItemInMainHand().getTypeId());
-												getConfig().set("Trains."+name+"cart.skin.materialdata", ((Player)sender).getInventory().getItemInMainHand().getDurability() + "");
+						}else if(args[1].equalsIgnoreCase("setskin")){
+								if(args.length == 4){
+									String name = args[2];
+										String type = args[3];
+										if(type.equalsIgnoreCase("Loco")) {
+											if(getAPI().isTrain(name + "loco")) {
+												getConfig().set("Trains."+name+"loco.skin.materialid", ((Player)sender).getInventory().getItemInMainHand().getTypeId());
+												getConfig().set("Trains."+name+"loco.skin.materialdata", ((Player)sender).getInventory().getItemInMainHand().getDurability() + "");
 												saveConfig();
 												sender.sendMessage(getMessage("Message.trainEdited"));
 											}else {
 												sender.sendMessage(getMessage("Error.invalidTrain"));
 											}
-										}else {
-											sender.sendMessage(getMessage("Error.locoCart"));
-										}
+										}else 
+											if(type.equalsIgnoreCase("Cart")) {
+												if(getAPI().isTrain(name + "cart")) {
+													getConfig().set("Trains."+name+"cart.skin.materialid", ((Player)sender).getInventory().getItemInMainHand().getTypeId());
+													getConfig().set("Trains."+name+"cart.skin.materialdata", ((Player)sender).getInventory().getItemInMainHand().getDurability() + "");
+													saveConfig();
+													sender.sendMessage(getMessage("Message.trainEdited"));
+												}else {
+													sender.sendMessage(getMessage("Error.invalidTrain"));
+												}
+											}else {
+												sender.sendMessage(getMessage("Error.locoCart"));
+											}
+									}
+						}else if(args[1].equalsIgnoreCase("list")){
+								sender.sendMessage("§3Train List:");
+								if(getConfig().contains("Trains")) {
+							    for(String s : getConfig().getConfigurationSection("Trains").getKeys(false)){
+							    	if(s.contains("loco")){
+							    		sender.sendMessage("§2" + s.replace("loco", ""));
+							    	}
+							    }
+								}else {
+									sender.sendMessage(getMessage("Message.noTrains"));
 								}
-					}else if(args[1].equalsIgnoreCase("list")){
-							sender.sendMessage("§3Train List:");
-							if(getConfig().contains("Trains")) {
-						    for(String s : getConfig().getConfigurationSection("Trains").getKeys(false)){
-						    	if(s.contains("loco")){
-						    		sender.sendMessage("§2" + s.replace("loco", ""));
-						    	}
-						    }
-							}else {
-								sender.sendMessage(getMessage("Message.noTrains"));
-							}
-							
+								
+						}
+					}else{
+						sender.sendMessage("§8============================================");
+						sender.sendMessage("§6/rc train list");
+						sender.sendMessage("§6/rc train create");
+						sender.sendMessage("§6/rc train chairs");
+						sender.sendMessage("§6/rc train setskin");
+						sender.sendMessage("§6/rc train setoffset");
+						sender.sendMessage("§6/rc train settilt");
+						sender.sendMessage("§8============================================");
 					}
-				}else{
-					sender.sendMessage("§8============================================");
-					sender.sendMessage("§6/rc train list");
-					sender.sendMessage("§6/rc train create");
-					sender.sendMessage("§6/rc train chairs");
-					sender.sendMessage("§6/rc train setskin");
-					sender.sendMessage("§6/rc train setoffset");
-					sender.sendMessage("§6/rc train settilt");
-					sender.sendMessage("§8============================================");
-				}
 				}else {
 					sender.sendMessage(getMessage("Error.noPermissions"));
 				}
@@ -875,6 +878,7 @@ public class Main extends JavaPlugin implements Listener{
 	Integer Offset = 0;
 	float previous = 0;
 	Integer Kantel = 0;
+	
     Vector getDirectionBetweenLocations(Location Start, Location End) {
         Vector from = Start.toVector();
         Vector to = End.toVector();

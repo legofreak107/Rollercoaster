@@ -112,7 +112,7 @@ public class MoveCoaster {
 									int oldSpeed = t.speed;
 									t.speed = 0;
 									t.riding = false;
-									plugin.wait1(Integer.parseInt(s.getLine(2)), oldSpeed, t);
+									plugin.wait(Integer.parseInt(s.getLine(2)), oldSpeed, t);
 								}
 							}
 								else if(s.getLine(1).equalsIgnoreCase("setskin")){
@@ -156,7 +156,7 @@ public class MoveCoaster {
 									int oldSpeed = t.speed;
 									t.speed = 0;
 									t.riding = false;
-									plugin.wait1(Integer.parseInt(s.getLine(2)), oldSpeed, t);
+									plugin.wait(Integer.parseInt(s.getLine(2)), oldSpeed, t);
 								}
 							}else if(s.getLine(1).equalsIgnoreCase("locked")){
 								Integer d = Integer.parseInt(s.getLine(2));

@@ -1,5 +1,11 @@
 package me.legofreak107.rollercoaster;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.Listener;
 
 import me.legofreak107.rollercoaster.objects.Cart;
@@ -36,4 +42,63 @@ public class SaveAndLoad implements Listener{
 		}
 		plugin.saveConfig();
 	}
+	
+
+	private FileConfiguration customLangConfig = null;
+	private File customLangConfigFile = null;
+	
+	public void reloadCustomLangConfig(String name) {
+	    if (customLangConfigFile == null) {
+	    	customLangConfigFile = new File(plugin.getDataFolder(), name+".yml");
+	    }
+	    customLangConfig = YamlConfiguration.loadConfiguration(customLangConfigFile);
+	}
+	
+	public FileConfiguration getCustomLangConfig(String name) {
+	    if (customLangConfig == null) {
+	        reloadCustomLangConfig(name);
+	    }
+	    return customLangConfig;
+	}
+	
+	public void saveCustomLangConfig(String name) {
+	    if (customLangConfig == null || customLangConfigFile == null) {
+	        return;
+	    }
+	    try {
+	        getCustomLangConfig(name).save(customLangConfigFile);
+	    } catch (IOException ex) {
+	    	plugin.getLogger().log(Level.SEVERE, "Could not save config to " + customLangConfigFile, ex);
+	    }
+	}
+	
+	
+	private FileConfiguration customSaveConfig = null;
+	private File customSaveConfigFile = null;
+	
+	public void reloadCustomSaveConfig() {
+	    if (customSaveConfigFile == null) {
+	    	customSaveConfigFile = new File(plugin.getDataFolder(), "save.yml");
+	    }
+	    customSaveConfig = YamlConfiguration.loadConfiguration(customSaveConfigFile);
+	}
+	
+	public FileConfiguration getCustomSaveConfig() {
+	    if (customSaveConfig == null) {
+	        reloadCustomSaveConfig();
+	    }
+	    return customSaveConfig;
+	}
+	
+	public void saveCustomSaveConfig() {
+	    if (customSaveConfig == null || customSaveConfigFile == null) {
+	        return;
+	    }
+	    try {
+	        getCustomSaveConfig().save(customSaveConfigFile);
+	    } catch (IOException ex) {
+	        plugin.getLogger().log(Level.SEVERE, "Could not save config to " + customSaveConfigFile, ex);
+	    }
+	}
+	
 }
