@@ -46,7 +46,7 @@ public class API {
 		train.riding = true;
 		for(int i = 0; i < train.carts.size(); i ++){
 			Cart c = train.carts.get(i);
-			c.pos = i * train.cartOffset;
+			c.pos = (i+1) * train.cartOffset;
 		}
 		plugin.setActive(train.track.name, false);
 		TrainStartEvent event = new TrainStartEvent("TrainStartEvent", train);

@@ -111,6 +111,7 @@ public class MoveCoaster {
 								if(t.loco == c){
 									int oldSpeed = t.speed;
 									t.speed = 0;
+									t.riding = false;
 									plugin.wait1(Integer.parseInt(s.getLine(2)), oldSpeed, t);
 								}
 							}
@@ -154,6 +155,7 @@ public class MoveCoaster {
 								if(t.loco == c){
 									int oldSpeed = t.speed;
 									t.speed = 0;
+									t.riding = false;
 									plugin.wait1(Integer.parseInt(s.getLine(2)), oldSpeed, t);
 								}
 							}else if(s.getLine(1).equalsIgnoreCase("locked")){
@@ -316,7 +318,7 @@ public class MoveCoaster {
 
         							Location Tloc = tr.locs.get(c2.pos + (int)t.speed).toLocation(tr.origin.getWorld());
         			        		EntityArmorStand Ta1 = ((CraftArmorStand) c2.holder).getHandle();
-        				        	Ta1.setLocation(Tloc.getX(), Tloc.getY(), Tloc.getZ(),0 + c2.rotation,0); 
+        				        	Ta1.setLocation(Tloc.getX(), Tloc.getY(), Tloc.getZ(),l2.getYaw() + c2.rotation,0); 
         						    c2.holder.setHeadPose(new EulerAngle(Math.toRadians(l2.getPitch()),0,Math.toRadians(c2.tilt)));
         							for(Seat s : c2.seats){
         								s.locked = false;
