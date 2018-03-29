@@ -13,5 +13,11 @@ public class Train {
 	public Integer maxSpeed;
 	public Integer minSpeed;
 	public Track track;
+	public Boolean locked = false;
+	public Integer cartOffset;
+	public Boolean tilt;
+	public String trainName;
+	public Boolean hasLoco;
+	public Boolean autoSpeed;
 	
 }

@@ -1,4 +1,4 @@
-package me.legofreak107.rollercoaster;
+package me.legofreak107.rollercoaster.api;
 
 import java.util.ArrayList;
 
@@ -7,10 +7,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import me.legofreak107.rollercoaster.api.TrainStartEvent;
-import me.legofreak107.rollercoaster.api.TrainStopEvent;
+import me.legofreak107.rollercoaster.Main;
 import me.legofreak107.rollercoaster.libs.CustomPath;
 import me.legofreak107.rollercoaster.libs.CustomPathBuilder;
 import me.legofreak107.rollercoaster.objects.Cart;
@@ -19,8 +19,8 @@ import me.legofreak107.rollercoaster.objects.Seat;
 import me.legofreak107.rollercoaster.objects.Track;
 import me.legofreak107.rollercoaster.objects.Train;
 
-public class Methods {
-
+public class API {
+	
 	public Main plugin;
 	
 	public Cart getCart(String name){
@@ -38,17 +38,17 @@ public class Methods {
 		}
 		c.seats = seats;
 		return c;
-	}
+	}	
 	
 	public void startTrain(String track){
 		Train train = getTrain(track);
-		plugin.setActive(train.track.name, false);
 		train.inStation = false;
 		train.riding = true;
 		for(int i = 0; i < train.carts.size(); i ++){
 			Cart c = train.carts.get(i);
 			c.pos = i * train.cartOffset;
 		}
+		plugin.setActive(train.track.name, false);
 		TrainStartEvent event = new TrainStartEvent("TrainStartEvent", train);
 		Bukkit.getServer().getPluginManager().callEvent(event);
 	}
@@ -64,6 +64,65 @@ public class Methods {
 	public void setLoop(String track, Integer time){
 		Train train = getTrain(track);
 		plugin.loop.put(train, (time));
+	}
+	
+	public void setSpeed(Train t, Integer speed){
+		t.speed = speed;
+	}
+	
+	public void setMinSpeed(Train t, Integer speed){
+		t.minSpeed = speed;
+	}
+	
+	public void setMaxSpeed(Train t, Integer speed){
+		t.maxSpeed = speed;
+	}
+	
+	public void setAutorotation(Train t, Boolean rotation){
+		for(Cart c : t.carts){
+			c.autoRotation = rotation;
+		}
+	}
+	
+	public void setAutotilt(Train t, Boolean tilt){
+		for(Cart c : t.carts){
+			c.autoTilt = tilt;
+		}
+	}
+	
+	public void setOffset(Train t, Integer offset){
+		t.cartOffset = offset;
+	}
+	
+	public void setTilt(Cart c, Double tilt){
+		c.tiltTarget = tilt;
+	}
+	
+	public void setRotation(Cart c, Integer rotation){
+		c.rotationTarget = rotation;
+	}
+	
+	public void setItem(Cart c, ItemStack item){
+		c.holder.setHelmet(item);
+	}
+	
+	public void setLocked(Train t, Boolean locked){
+		t.locked = locked;
+		if(t.locked){
+			TrainLockEvent event = new TrainLockEvent("TrainLockEvent",t);
+			Bukkit.getServer().getPluginManager().callEvent(event);
+		}else{
+			TrainUnlockEvent event = new TrainUnlockEvent("TrainUnlockEvent", t);
+			Bukkit.getServer().getPluginManager().callEvent(event);
+		}
+	}
+	
+	public void setUpsideDown(Cart c, Boolean upsidedown){
+		c.loop = upsidedown;
+	}
+	
+	public void setRiding(Player p, Seat s){
+		s.holder.addPassenger(p);
 	}
 	
 	public Cart getCart(ArmorStand armorstand){
@@ -133,8 +192,8 @@ public class Methods {
 	
 	public Boolean isTrack(String name){
 		Boolean t = false;
-		for(Track tr : plugin.tracks){
-			if(tr.name.equalsIgnoreCase(name)){
+		for(String s : plugin.getConfig().getConfigurationSection("Tracks").getKeys(false)){
+			if(s.equalsIgnoreCase(name)){
 				t = true;
 			}
 		}
@@ -165,18 +224,19 @@ public class Methods {
 		return as;
 	}
 	
-	public Train spawnTrain(String name, Integer length, Boolean hasLoco, Location loc, Integer small){
+	public Train spawnTrain(String trainname, Integer length, Boolean hasLoco, Location loc, Boolean small, Track track, Integer minSpeed, Integer maxSpeed, Integer offset){
 		ArrayList<Cart> carts = new ArrayList<Cart>();
 		Train train = new Train();
+		train.cartOffset = offset;
+		train.maxSpeed = maxSpeed;
+		train.minSpeed = minSpeed;
+		train.track = track;
 		ArmorStand loco = null;
-		train.trainName = name;
-		train.hasLoco = hasLoco;
 		for(int i = 0; i < length; i ++){
 			if(i == length-1 && hasLoco){
-				Cart t = getCart(name + "loco");
-				ArmorStand cart = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);									
-				if(small == 1)
-				cart.setSmall(true);
+				Cart t = getCart(trainname + "loco");
+				ArmorStand cart = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);		
+				cart.setSmall(small);
 				cart.setCollidable(false);
 				cart.setAI(false);
 				cart.setGravity(false);
@@ -188,9 +248,8 @@ public class Methods {
 				loco = cart;
 				ArrayList<Seat> seats = new ArrayList<Seat>();
 				for(Seat s : t.seats){
-					ArmorStand se = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);								
-					if(small == 1)					
-					se.setSmall(true);
+					ArmorStand se = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);					
+					se.setSmall(small);
 					se.setCollidable(false);
 					se.setAI(false);
 					se.setGravity(false);
@@ -208,10 +267,9 @@ public class Methods {
 				t.train = train;
 				train.loco = t;
 			}else{
-				Cart t = getCart(name + "cart");
-				ArmorStand cart = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);									
-				if(small == 1)				
-				cart.setSmall(true);
+				Cart t = getCart(trainname + "cart");
+				ArmorStand cart = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);				
+				cart.setSmall(small);
 				cart.setCollidable(false);
 				cart.setAI(false);
 				cart.setGravity(false);
@@ -223,9 +281,8 @@ public class Methods {
 				t.loco = loco;
 				ArrayList<Seat> seats = new ArrayList<Seat>();
 				for(Seat s : t.seats){
-					ArmorStand se = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);								
-					if(small == 1)			
-					se.setSmall(true);
+					ArmorStand se = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);	
+					se.setSmall(small);
 					se.setCollidable(false);
 					se.setAI(false);
 					se.setGravity(false);
@@ -250,6 +307,7 @@ public class Methods {
 		train.carts = carts;
 		train.inStation = true;
 		train.riding = false;
+		plugin.trains.add(train);
 		return train;
 	}
 	

@@ -14,7 +14,7 @@ public class CustomPath extends Moveable {
 	Location[] pathPoints;
 
 	private double speed = 0.25;
-	int levelOfDetail = 20;
+	int levelOfDetail = 30;
 	boolean stopAtTheEnd = false;
 	public CustomPath path = null;
 	

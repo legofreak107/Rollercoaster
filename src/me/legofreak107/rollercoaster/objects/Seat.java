@@ -5,11 +5,13 @@ import org.bukkit.entity.Player;
 
 public class Seat {
 
-	public float fb;
-	public float lr;
+	public double fb;
+	public double lr;
 	public ArmorStand parent;
 	public ArmorStand holder;
 	public Player inside;
-	public Boolean locked;
+	public Boolean locked = false;
+	public Train train;
+	public Cart cart;
 	
 }

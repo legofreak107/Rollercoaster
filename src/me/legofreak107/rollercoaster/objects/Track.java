@@ -7,7 +7,7 @@ import org.bukkit.Location;
 public class Track {
 
 	public String name;
-	public ArrayList<Location> locs;
+	public ArrayList<PathPoint> locs;
 	public ArrayList<Location> locstosave;
 	public Location origin;
 	
