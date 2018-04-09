@@ -1,6 +1,5 @@
 package me.legofreak107.rollercoaster;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -9,7 +8,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -20,8 +18,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -29,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
+import io.netty.handler.codec.http2.Http2FrameReader.Configuration;
 import me.legofreak107.rollercoaster.api.API;
 import me.legofreak107.rollercoaster.api.TrainLockEvent;
 import me.legofreak107.rollercoaster.api.TrainStartEvent;
@@ -58,6 +55,9 @@ public class Main extends JavaPlugin implements Listener{
 	
 	//Stored Tracks
 	public ArrayList<Track> tracks = new ArrayList<Track>();
+	
+	//List of chunks containing tracks
+	public ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 	
 	//Stored Trains
 	public ArrayList<Train> trains = new ArrayList<Train>();
@@ -139,39 +139,6 @@ public class Main extends JavaPlugin implements Listener{
 			}
 		}
 	}
-
-	//Used to load in coasters from a bezier curve in blender (BETA)
-	public void loadCoaster(String name, World w) throws NumberFormatException, IOException{
-		ArrayList<PathPoint> track = new ArrayList<PathPoint>();
-		Integer i = 0;
-		   for(String s : Files.readAllLines(Paths.get(getDataFolder() + "/beziercurves/"+name+".txt"))){
-		      String[] splitted = s.split(" ");
-		      Double x = Double.valueOf(splitted[0]);
-		      Double y= Double.valueOf(splitted[1]);
-		      Double z = Double.valueOf(splitted[2]);
-		      Double tilt = Double.valueOf(splitted[3]);
-		      PathPoint t = new PathPoint(x,y,z,tilt);
-		      track.add(t);
-		      if(i > 100){
-				ArmorStand a = (ArmorStand) t.toLocation(w).getWorld().spawnEntity(t.toLocation(w), EntityType.ARMOR_STAND);
-				a.setCustomName("test");
-				a.setGravity(false);
-				i = 0;
-		      }
-		      i ++;
-		   }
-		   Bukkit.broadcastMessage("§2Added: " + track.size() + " points");
-			Track t = new Track();
-			Location origin = new Location(Bukkit.getWorld("world"),
-					0,
-					0,
-					0
-					);
-			t.locs = track;
-			t.origin = origin;
-			t.name = name;
-			tracks.add(t);
-	}
 	
 	//Round up to nearest multiple of x
 	int round(double i, int v){
@@ -188,6 +155,13 @@ public class Main extends JavaPlugin implements Listener{
 			public void run(){
 				t.speed = oldSpeed;
 				t.riding = true;
+				int count = 0;
+				if(getConfig().contains("Ridecount." + t.track.name + ".count")){
+					getConfig().set("Ridecount." + t.track.name + ".count", getConfig().getInt("Ridecount." + t.track.name + ".count") + count);
+				}else{
+					getConfig().set("Ridecount." + t.track.name + ".count", count);
+				}
+				saveConfig();
 			}
 		}, 20 * waitTime);
 	}
@@ -216,38 +190,24 @@ public class Main extends JavaPlugin implements Listener{
 		}, 20L * loop.get(t));
 	}
 	
+	ChunkUnload CU = new ChunkUnload(this);
+	EntityDismount ED = new EntityDismount(this);
+	PlayerInteractAtEntity PIAE = new PlayerInteractAtEntity(this);
+	PlayerJoin PJ = new PlayerJoin(this);
+	
 	//Start of the plugin
 	@Override
 	public void onEnable(){
-		Bukkit.getPluginManager().registerEvents(new ChunkUnload(this), this);
-		Bukkit.getPluginManager().registerEvents(new EntityDismount(this), this);
-		Bukkit.getPluginManager().registerEvents(new PlayerInteractAtEntity(this), this);
-		Bukkit.getPluginManager().registerEvents(new PlayerJoin(this), this);
+		Bukkit.getPluginManager().registerEvents(CU, this);
+		Bukkit.getPluginManager().registerEvents(ED, this);
+		Bukkit.getPluginManager().registerEvents(PIAE, this);
+		Bukkit.getPluginManager().registerEvents(PJ, this);	
+
 		sal.plugin = this;
 		LangFile lm = new LangFile();
 		langFile = "LANG_EN";
 		lm.generateLanguageFile(this);
 		getAPI().plugin = this;
-		if(Bukkit.getOnlinePlayers().size() > 0){
-			if(sal.getCustomSaveConfig().contains("Saved")){
-				for(String s : sal.getCustomSaveConfig().getConfigurationSection("Saved").getKeys(false)){
-			        Integer loopSeconds = sal.getCustomSaveConfig().getInt("Saved." + s + ".loopSeconds");
-			        Integer cartOffset = sal.getCustomSaveConfig().getInt("Saved." + s + ".cartOffset");
-			        Integer minSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".minSpeed");
-			        Integer maxSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".maxSpeed");
-			        Integer trainLength = sal.getCustomSaveConfig().getInt("Saved." + s + ".trainLength");
-			        Boolean hasLoco = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".hasLoco");
-			        Boolean isSmall = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".isSmall");
-			        String trainName = sal.getCustomSaveConfig().getString("Saved." + s + ".trainName");
-			        Train t = getAPI().spawnTrain(trainName, trainLength, hasLoco, getAPI().getTrack(s).origin, isSmall, getAPI().getTrack(s), minSpeed, maxSpeed, cartOffset);
-			        loop.put(t, loopSeconds);
-			        getAPI().startTrain(s);
-			        sal.getCustomSaveConfig().set("Saved." + s, null);
-				}
-		        sal.getCustomSaveConfig().set("Saved", null);
-		        trainsSpawned = true;
-			}
-		}
 		if(getConfig().contains("Settings.languageFile")){
 			langFile = (String)getConfig().get("Settings.languageFile");
 		}else{
@@ -261,6 +221,32 @@ public class Main extends JavaPlugin implements Listener{
 				runStartup();
 			}
 		}, 5L);
+
+		Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable(){
+			public void run(){
+				if(Bukkit.getOnlinePlayers().size() > 0){
+					if(sal.getCustomSaveConfig().contains("Saved")){
+						for(String s : sal.getCustomSaveConfig().getConfigurationSection("Saved").getKeys(false)){
+					        Integer loopSeconds = sal.getCustomSaveConfig().getInt("Saved." + s + ".loopSeconds");
+					        Integer cartOffset = sal.getCustomSaveConfig().getInt("Saved." + s + ".cartOffset");
+					        Integer minSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".minSpeed");
+					        Integer maxSpeed = sal.getCustomSaveConfig().getInt("Saved." + s + ".maxSpeed");
+					        Integer trainLength = sal.getCustomSaveConfig().getInt("Saved." + s + ".trainLength");
+					        Integer cartDownPos = sal.getCustomSaveConfig().getInt("Saved." + s + ".cartDownPos");
+					        Boolean hasLoco = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".hasLoco");
+					        Boolean isSmall = sal.getCustomSaveConfig().getBoolean("Saved." + s + ".isSmall");
+					        String trainName = sal.getCustomSaveConfig().getString("Saved." + s + ".trainName");
+					        Train t = getAPI().spawnTrain(trainName, trainLength, hasLoco, getAPI().getTrack(s).origin, isSmall, getAPI().getTrack(s), minSpeed, maxSpeed, cartOffset, cartDownPos);
+					        loop.put(t, loopSeconds);
+					        getAPI().startTrain(s);
+					        sal.getCustomSaveConfig().set("Saved." + s, null);
+						}
+				        sal.getCustomSaveConfig().set("Saved", null);
+				        trainsSpawned = true;
+					}
+				}
+			}
+		}, 20L);
 	}
 
 	
@@ -272,14 +258,16 @@ public class Main extends JavaPlugin implements Listener{
 	        Map.Entry pair = (Map.Entry)it.next();
 	        Train t = (Train) pair.getKey();
 	        Integer time = (Integer) pair.getValue();
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".loopSeconds", time);
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".cartOffset", t.cartOffset);
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".minSpeed", t.minSpeed);
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".maxSpeed", t.maxSpeed);
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".trainLength", t.carts.size());
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".hasLoco", t.hasLoco);
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".isSmall", t.carts.get(0).holder.isSmall());
-	        sal.getCustomSaveConfig().set("Saved." + t.track.name + ".trainName", t.trainName);
+	        String name = t.track.name;
+	        sal.getCustomSaveConfig().set("Saved." + name + ".loopSeconds", time);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".cartOffset", t.cartOffset);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".minSpeed", t.minSpeed);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".maxSpeed", t.maxSpeed);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".trainLength", t.carts.size());
+	        sal.getCustomSaveConfig().set("Saved." + name + ".hasLoco", t.hasLoco);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".trainName", t.trainName);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".cartDownPos", t.cartDownPos);
+	        sal.getCustomSaveConfig().set("Saved." + name + ".isSmall", t.carts.get(0).holder.isSmall());
 	        sal.saveCustomSaveConfig();
 	        it.remove(); // avoids a ConcurrentModificationException
 	    }
@@ -345,17 +333,18 @@ public class Main extends JavaPlugin implements Listener{
 					//Check if user has permissions
 					if(sender.hasPermission("rollercoaster.spawntrain")) {
 						//Check if command has the correct amount of arguments
-						if(args.length == 9){
+						if(args.length == 10){
 							String track = args[1];
 							String train = args[2];
 							//Check if all the arguments entered are valid
-							if(checkMe(args[3]) && checkMe(args[4]) && checkMe(args[5]) && checkMe(args[6]) && checkMe(args[7]) && checkMe(args[8])) {
+							if(checkMe(args[3]) && checkMe(args[4]) && checkMe(args[5]) && checkMe(args[6]) && checkMe(args[7]) && checkMe(args[8]) && checkMe(args[9])) {
 								if(getAPI().isTrack(track)) {
 									if(getConfig().contains("Trains." + train + "cart")) {
 										//Spawn in train using the given args
 										Integer length = Integer.parseInt(args[3]);
 										Integer loco = Integer.parseInt(args[4]);
 										Integer small = Integer.parseInt(args[8]);
+										Integer cartDownPos = Integer.parseInt(args[9]);
 										Boolean tilt = false;
 										Boolean hasLoc = false;
 										Boolean isSmall = false;
@@ -363,7 +352,7 @@ public class Main extends JavaPlugin implements Listener{
 											hasLoc = true;
 										if(small == 1)
 											isSmall = true;
-										Train t = getAPI().spawnTrain(train, length, hasLoc, ((Player) sender).getLocation(), isSmall, getAPI().getTrack(track), Integer.parseInt(args[6]), Integer.parseInt(args[7]), Integer.parseInt(args[5]));
+										Train t = getAPI().spawnTrain(train, length, hasLoc, ((Player) sender).getLocation(), isSmall, getAPI().getTrack(track), Integer.parseInt(args[6]), Integer.parseInt(args[7]), Integer.parseInt(args[5]), Integer.parseInt(args[9]));
 										t.track = getAPI().getTrackStorage(track);
 										t.tilt = tilt;
 										t.cartOffset = Integer.parseInt(args[5]);
@@ -416,24 +405,6 @@ public class Main extends JavaPlugin implements Listener{
 						sender.sendMessage(getMessage("Error.noPermissions"));
 					}
 				//BETA (used for the bezier curve tracks) IGNORE THIS
-				}else if(args[0].equalsIgnoreCase("loadcoaster")){
-					if(sender.hasPermission("rollercoaster.loadcoaster")) {
-					if(args.length == 2){
-						String track = args[1];
-						try {
-							loadCoaster(track, ((Player)sender).getWorld());
-						} catch (NumberFormatException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}else{
-						sender.sendMessage(getMessage("Usage.startTrain"));
-					}
-					}else {
-						sender.sendMessage(getMessage("Error.noPermissions"));
-					}
-				//Check if first argument is loop (/rc loop)
 				}else if(args[0].equalsIgnoreCase("loop")){
 					//Check if user has permissions
 					if(sender.hasPermission("rollercoaster.loop")) {

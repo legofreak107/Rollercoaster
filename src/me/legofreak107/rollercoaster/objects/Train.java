@@ -15,6 +15,7 @@ public class Train {
 	public Track track;
 	public Boolean locked = false;
 	public Integer cartOffset;
+	public Integer cartDownPos = 0;
 	public Boolean tilt;
 	public String trainName;
 	public Boolean hasLoco;

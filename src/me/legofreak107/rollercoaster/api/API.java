@@ -1,11 +1,13 @@
 package me.legofreak107.rollercoaster.api;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -48,6 +50,22 @@ public class API {
 			Cart c = train.carts.get(i);
 			c.pos = (i+1) * train.cartOffset;
 		}
+		Integer count = 0;
+		for(Cart c : train.carts){
+			for(Seat s : c.seats){
+				for(Entity e : s.holder.getPassengers()){
+					if(e instanceof Player){
+						count ++;
+					}
+				}
+			}
+		}
+		if(plugin.getConfig().contains("Ridecount." + train.track.name + ".count")){
+			plugin.getConfig().set("Ridecount." + train.track.name + ".count", plugin.getConfig().getInt("Ridecount." + train.track.name + ".count") + count);
+		}else{
+			plugin.getConfig().set("Ridecount." + train.track.name + ".count", count);
+		}
+		plugin.saveConfig();
 		plugin.setActive(train.track.name, false);
 		TrainStartEvent event = new TrainStartEvent("TrainStartEvent", train);
 		Bukkit.getServer().getPluginManager().callEvent(event);
@@ -152,10 +170,10 @@ public class API {
 					);
 			loc.add(l);
 		}
-		t.locstosave = loc;
 		t.locs = generateTrack(loc, origin);
 		t.origin = origin;
 		t.name = name;
+		loc.clear();
 		return t;
 	}
 	
@@ -220,16 +238,21 @@ public class API {
 			loc.setPitch(0);
 			loc.setYaw(0);
 			as.add(new PathPoint(loc.getX(),loc.getY(),loc.getZ(),0D));
+			if(!plugin.chunks.contains(loc.getChunk())){
+				plugin.chunks.add(loc.getChunk());
+			}
 		}
+		path.pathPoints = null;
 		return as;
 	}
 	
-	public Train spawnTrain(String trainname, Integer length, Boolean hasLoco, Location loc, Boolean small, Track track, Integer minSpeed, Integer maxSpeed, Integer offset){
+	public Train spawnTrain(String trainname, Integer length, Boolean hasLoco, Location loc, Boolean small, Track track, Integer minSpeed, Integer maxSpeed, Integer offset, Integer downpos){
 		ArrayList<Cart> carts = new ArrayList<Cart>();
 		Train train = new Train();
 		train.cartOffset = offset;
 		train.maxSpeed = maxSpeed;
 		train.minSpeed = minSpeed;
+		train.cartDownPos = downpos;
 		train.track = track;
 		ArmorStand loco = null;
 		for(int i = 0; i < length; i ++){

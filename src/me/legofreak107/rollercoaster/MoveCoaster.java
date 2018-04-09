@@ -278,17 +278,17 @@ public class MoveCoaster {
 			        		if(c.autoRotation){
 				        		if(c.loop != null && c.loop){
 						        	c.holder.setHeadPose(new EulerAngle(Math.toRadians(-(l2.getPitch()+180)),0,Math.toRadians(c.tilt)));
-				        			a1.setLocation(loc.getX(), loc.getY()-2, loc.getZ(),l2.getYaw()-180 + c.rotation,(float) Math.toDegrees(c.holder.getHeadPose().getX())-180);
+				        			a1.setLocation(loc.getX(), loc.getY()-2 + t.cartDownPos, loc.getZ(),l2.getYaw()-180 + c.rotation,(float) Math.toDegrees(c.holder.getHeadPose().getX())-180);
 				        		}else{
 						        	c.holder.setHeadPose(new EulerAngle(Math.toRadians(l2.getPitch()),0,Math.toRadians(c.tilt)));
-				        			a1.setLocation(loc.getX(), loc.getY(), loc.getZ(),l2.getYaw() + c.rotation,(float) Math.toDegrees(c.holder.getHeadPose().getX()));
+				        			a1.setLocation(loc.getX(), loc.getY() + t.cartDownPos, loc.getZ(),l2.getYaw() + c.rotation,(float) Math.toDegrees(c.holder.getHeadPose().getX()));
 				        		}
 			        		}else{
 				        		if(c.loop != null && c.loop){
-				        			a1.setLocation(loc.getX(), loc.getY(), loc.getZ(),-180 + c.rotation,0);
+				        			a1.setLocation(loc.getX(), loc.getY() + t.cartDownPos, loc.getZ(),-180 + c.rotation,0);
 						        	c.holder.setHeadPose(new EulerAngle(Math.toRadians(-(l2.getPitch()+180)),0,Math.toRadians(c.tilt)));
 				        		}else{
-				        			a1.setLocation(loc.getX(), loc.getY(), loc.getZ(),0 + c.rotation,0); 
+				        			a1.setLocation(loc.getX(), loc.getY() + t.cartDownPos, loc.getZ(),0 + c.rotation,0); 
 						        	c.holder.setHeadPose(new EulerAngle(Math.toRadians(l2.getPitch()),0,Math.toRadians(c.tilt)));
 				        		}
 			        		}

@@ -11,10 +11,10 @@ public class CustomPath extends Moveable {
 
 	private List<Location> preLocation = new ArrayList<Location>();
 	private HashMap<Moveable, Double> childrenMap = new HashMap<Moveable, Double>();
-	Location[] pathPoints;
+	public Location[] pathPoints;
 
 	private double speed = 0.25;
-	int levelOfDetail = 30;
+	int levelOfDetail = 80;
 	boolean stopAtTheEnd = false;
 	public CustomPath path = null;
 	

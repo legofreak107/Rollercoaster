@@ -28,7 +28,8 @@ public class PlayerJoin implements Listener{
 			        Boolean hasLoco = plugin.sal.getCustomSaveConfig().getBoolean("Saved." + s + ".hasLoco");
 			        Boolean isSmall = plugin.sal.getCustomSaveConfig().getBoolean("Saved." + s + ".isSmall");
 			        String trainName = plugin.sal.getCustomSaveConfig().getString("Saved." + s + ".trainName");
-			        Train t = plugin.getAPI().spawnTrain(trainName, trainLength, hasLoco, plugin.getAPI().getTrack(s).origin, isSmall, plugin.getAPI().getTrack(s), minSpeed, maxSpeed, cartOffset);
+			        Integer cartDownPos = plugin.sal.getCustomSaveConfig().getInt("Saved." + s + ".cartDownPos");
+			        Train t = plugin.getAPI().spawnTrain(trainName, trainLength, hasLoco, plugin.getAPI().getTrack(s).origin, isSmall, plugin.getAPI().getTrack(s), minSpeed, maxSpeed, cartOffset, cartDownPos);
 			        plugin.loop.put(t, loopSeconds);
 			        plugin.getAPI().startTrain(s);
 			        plugin.sal.getCustomSaveConfig().set("Saved." + s, null);

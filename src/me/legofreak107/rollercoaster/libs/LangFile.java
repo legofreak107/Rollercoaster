@@ -8,7 +8,7 @@ public class LangFile {
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Message.trainSpawned", "&2Train spawned!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Error.invalidTrain", "&cInvalid train type, try /rc train list for a list of trains.");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Error.invalidTrack", "&cInvalid track type, try /rc tracklist for a list of tracks.");
-		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.spawnTrain", "&cUsage: /rc spawntrain <trainname> <traintype> <cartamount> <haslocomotive> <cartoffset> <minspeed> <maxspeed> <small>");
+		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.spawnTrain", "&cUsage: /rc spawntrain <trainname> <traintype> <cartamount> <haslocomotive> <cartoffset> <minspeed> <maxspeed> <small> <y offset>");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Error.noPermissions", "&cYou don't have permissions to excecute this command!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Message.trainStarted", "&2Train started!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.startTrain", "&cUsage: /rc starttrain <trainname>");
