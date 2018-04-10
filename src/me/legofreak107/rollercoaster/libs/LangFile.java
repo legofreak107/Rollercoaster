@@ -24,7 +24,7 @@ public class LangFile {
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.createTrain", "&cUsage: /rc train create <typename> <seatsloco> <seatscart>");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Error.invalidSeatNumber", "&cThis is not a valid seat number, please type a valid number!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.setSkin", "&cUsage: /rc train setskin <cart/loco>");
-		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.trainChairPos", "&cUsage: /rc train chairs pos <name> <seatnumber> <lr> <fb> <cart/loco>");
+		plugin.sal.getCustomLangConfig(plugin.langFile).set("Usage.trainChairPos", "&cUsage: /rc train chairs pos <name> <seatnumber> <lr> <fb> <ud> <cart/loco>");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Error.locoCart", "&cInvalid args, use Loco/Cart instead!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Message.noTrains", "&2You don't have any saved trains!");
 		plugin.sal.getCustomLangConfig(plugin.langFile).set("Message.pathBuild", "&2Path build!");

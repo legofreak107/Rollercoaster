@@ -297,7 +297,7 @@ public class MoveCoaster {
 					    	    float z = (float)(fb.getZ() + ( seat.lr * Math.sin(Math.toRadians(fb.getYaw() + 90 * 0)))); 
 					    	    float x = (float)(fb.getX() + ( seat.lr * Math.cos(Math.toRadians(fb.getYaw() + 90 * 0))));
 					    	    EntityArmorStand s1 = ((CraftArmorStand)seat.holder).getHandle();
-					    	    s1.setLocation(x, c.holder.getLocation().getY()-((Math.toRadians(l2.getPitch())))*seat.fb, z, (float) (0), c.holder.getLocation().getPitch());
+					    	    s1.setLocation(x, c.holder.getLocation().getY()-seat.ud-((Math.toRadians(l2.getPitch())))*seat.fb, z, (float) (0), c.holder.getLocation().getPitch());
 					        }
 					        plugin.previous = l2.getYaw();
 				        	c.pos = c.pos + (int)t.speed;
@@ -326,7 +326,7 @@ public class MoveCoaster {
         					    	    float z = (float)(fb.getZ() + ( s.lr * Math.sin(Math.toRadians(fb.getYaw() + 90 * 0)))); 
         					    	    float x = (float)(fb.getX() + ( s.lr * Math.cos(Math.toRadians(fb.getYaw() + 90 * 0))));
         					    	    EntityArmorStand s1 = ((CraftArmorStand)s.holder).getHandle();
-        					    	    s1.setLocation(x, c2.holder.getLocation().getY()-((Math.toRadians(l2.getPitch())))*s.fb, z, (float) (0), c2.holder.getLocation().getPitch());
+        					    	    s1.setLocation(x, c2.holder.getLocation().getY()-s.ud-((Math.toRadians(l2.getPitch())))*s.fb, z, (float) (0), c2.holder.getLocation().getPitch());
         							}
         						}
 			        			if(plugin.loop.containsKey(t)){

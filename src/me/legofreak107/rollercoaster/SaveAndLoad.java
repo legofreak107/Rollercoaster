@@ -24,6 +24,7 @@ public class SaveAndLoad implements Listener{
 		for(int i = 0; i < t.seats.size(); i ++){
 			plugin.getConfig().set("Trains." + t.name + ".seat" + i + ".offsetfb", t.seats.get(i).fb);
 			plugin.getConfig().set("Trains." + t.name + ".seat" + i + ".offsetlr", t.seats.get(i).lr);
+			plugin.getConfig().set("Trains." + t.name + ".seat" + i + ".offsetud", t.seats.get(i).ud);
 		}
 		plugin.saveConfig();
 	}

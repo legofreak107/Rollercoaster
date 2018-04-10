@@ -36,6 +36,11 @@ public class API {
 			Seat s = new Seat();
 			s.fb =  Double.parseDouble(plugin.getConfig().get("Trains." + name + ".seat" + i + ".offsetfb").toString());
 			s.lr =  Double.parseDouble(plugin.getConfig().get("Trains." + name + ".seat" + i + ".offsetlr").toString());
+			if(plugin.getConfig().contains("Trains." + name + ".seat" + i + ".offsetud")){
+				s.ud =  Double.parseDouble(plugin.getConfig().get("Trains." + name + ".seat" + i + ".offsetud").toString());
+			}else{
+				s.ud = 0;
+			}
 			seats.add(s);
 		}
 		c.seats = seats;
@@ -329,6 +334,8 @@ public class API {
 		}
 		train.carts = carts;
 		train.inStation = true;
+		train.hasLoco = hasLoco;
+		train.trainName = trainname;
 		train.riding = false;
 		plugin.trains.add(train);
 		return train;

@@ -7,6 +7,7 @@ public class Seat {
 
 	public double fb;
 	public double lr;
+	public double ud;
 	public ArmorStand parent;
 	public ArmorStand holder;
 	public Player inside;

@@ -14,7 +14,7 @@ public class CustomPath extends Moveable {
 	public Location[] pathPoints;
 
 	private double speed = 0.25;
-	int levelOfDetail = 80;
+	int levelOfDetail = 30;
 	boolean stopAtTheEnd = false;
 	public CustomPath path = null;
 	
@@ -42,19 +42,6 @@ public class CustomPath extends Moveable {
 		finalPath[0] = finalPath[1].clone().add(finalPath[1].clone().subtract(finalPath[2]));
 		finalPath[finalPath.length - 1] = finalPath[finalPath.length - 2].clone()
 				.add(finalPath[finalPath.length - 2].clone().subtract(finalPath[finalPath.length - 3]));
-		// TODO Finish This
-		// is this a closed, continuous loop? yes? well then so let's make a
-		// continuous Catmull-Rom spline!
-		/*
-		 * if (vector3s[1] == vector3s[vector3s.length - 2]) {
-		 * Bukkit.broadcastMessage("This strange thingy"); Location[]
-		 * tmpLoopSpline = new Location[vector3s.length]; copyArray(vector3s,
-		 * tmpLoopSpline, vector3s.length); tmpLoopSpline[0] =
-		 * tmpLoopSpline[tmpLoopSpline.length - 3];
-		 * tmpLoopSpline[tmpLoopSpline.length - 1] = tmpLoopSpline[2]; vector3s
-		 * = new Location[tmpLoopSpline.length]; copyArray(tmpLoopSpline,
-		 * vector3s, tmpLoopSpline.length); }
-		 */
 		pathPoints = finalPath;
 	}
 

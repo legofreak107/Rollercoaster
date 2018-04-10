@@ -46,7 +46,9 @@ import me.legofreak107.rollercoaster.objects.Track;
 import me.legofreak107.rollercoaster.objects.Train;
 
 public class Main extends JavaPlugin implements Listener{
-	
+	//TODO: Train y double offset
+	//TODO: Loop fix
+
 	//Save and load file (Used for config management)
 	public SaveAndLoad sal = new SaveAndLoad();
 	
@@ -259,15 +261,15 @@ public class Main extends JavaPlugin implements Listener{
 	        Train t = (Train) pair.getKey();
 	        Integer time = (Integer) pair.getValue();
 	        String name = t.track.name;
-	        sal.getCustomSaveConfig().set("Saved." + name + ".loopSeconds", time);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".cartOffset", t.cartOffset);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".minSpeed", t.minSpeed);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".maxSpeed", t.maxSpeed);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".trainLength", t.carts.size());
+	        sal.getCustomSaveConfig().set("Saved." + name + ".loopSeconds", time);//
+	        sal.getCustomSaveConfig().set("Saved." + name + ".cartOffset", t.cartOffset);//
+	        sal.getCustomSaveConfig().set("Saved." + name + ".minSpeed", t.minSpeed);//
+	        sal.getCustomSaveConfig().set("Saved." + name + ".maxSpeed", t.maxSpeed);//
+	        sal.getCustomSaveConfig().set("Saved." + name + ".trainLength", t.carts.size());//
 	        sal.getCustomSaveConfig().set("Saved." + name + ".hasLoco", t.hasLoco);
 	        sal.getCustomSaveConfig().set("Saved." + name + ".trainName", t.trainName);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".cartDownPos", t.cartDownPos);
-	        sal.getCustomSaveConfig().set("Saved." + name + ".isSmall", t.carts.get(0).holder.isSmall());
+	        sal.getCustomSaveConfig().set("Saved." + name + ".cartDownPos", t.cartDownPos);//
+	        sal.getCustomSaveConfig().set("Saved." + name + ".isSmall", t.carts.get(0).holder.isSmall());//
 	        sal.saveCustomSaveConfig();
 	        it.remove(); // avoids a ConcurrentModificationException
 	    }
@@ -285,8 +287,8 @@ public class Main extends JavaPlugin implements Listener{
 					s.holder.remove();
 				}
 			}
-			trains.remove(t);
 		}
+		trains.clear();
 	}
 	
 	//Check if input string is a number
@@ -466,6 +468,9 @@ public class Main extends JavaPlugin implements Listener{
 					if(sender.hasPermission("rollercoaster.createtrack")) {
 						if(CustomPathBuilder.vectorList.isEmpty()){
 				    	CustomPathBuilder.addPoint(((Player) sender).getLocation());
+				    	if(!chunks.contains(((Player) sender).getLocation().getChunk())){
+				    		chunks.add(((Player) sender).getLocation().getChunk());
+				    	}
 				    	lastLoc = ((Player) sender).getLocation();
 						ArmorStand ar = (ArmorStand) ((Player) sender).getLocation().getWorld().spawnEntity(((Player) sender).getLocation(), EntityType.ARMOR_STAND);
 						ar.setGravity(false);
@@ -527,6 +532,7 @@ public class Main extends JavaPlugin implements Listener{
 									Seat s = new Seat();
 									s.fb = 0;
 									s.lr = 0;
+									s.ud = 0;
 									seats.add(s);
 								}
 								c.seats = seats;
@@ -541,6 +547,7 @@ public class Main extends JavaPlugin implements Listener{
 									Seat s = new Seat();
 									s.fb = 0;
 									s.lr = 0;
+									s.ud = 0;
 									seats2.add(s);
 								}
 								c2.seats = seats2;
@@ -553,8 +560,8 @@ public class Main extends JavaPlugin implements Listener{
 						}else
 						if(args[1].equalsIgnoreCase("chairs")){
 							if(args[2].equalsIgnoreCase("pos")){
-								if(args.length == 8){
-									String type = args[7];
+								if(args.length == 9){
+									String type = args[8];
 									String name = args[3];
 									if(type.equalsIgnoreCase("loco")){
 										name = name+"loco";
@@ -565,18 +572,24 @@ public class Main extends JavaPlugin implements Listener{
 										if(checkMe(args[4])) {
 											if(checkMeb(args[5])) {
 												if(checkMeb(args[6])) {
+													if(checkMeb(args[7])) {
 														Integer number = Integer.parseInt(args[4]);
 														
 														if(number <= getConfig().getInt("Trains." + name + ".seatcount") && number > -1){
 															Double LR = Double.parseDouble(args[5]);
 															Double FB = Double.parseDouble(args[6]);
+															Double UD = Double.parseDouble(args[7]);
 															getConfig().set("Trains."+name+".seat"+number+".offsetlr", LR);
 															getConfig().set("Trains."+name+".seat"+number+".offsetfb", FB);
+															getConfig().set("Trains."+name+".seat"+number+".offsetud", UD);
 															saveConfig();
 															sender.sendMessage(getMessage("Message.trainEdited"));
 														}else{
 															sender.sendMessage(getMessage("Error.invalidSeatNumber"));
 														}
+													}else{
+														sender.sendMessage(getMessage("Error.noNumber"));
+													}
 												}else{
 													sender.sendMessage(getMessage("Error.noNumber"));
 												}
@@ -639,8 +652,6 @@ public class Main extends JavaPlugin implements Listener{
 						sender.sendMessage("§6/rc train create");
 						sender.sendMessage("§6/rc train chairs");
 						sender.sendMessage("§6/rc train setskin");
-						sender.sendMessage("§6/rc train setoffset");
-						sender.sendMessage("§6/rc train settilt");
 						sender.sendMessage("§8============================================");
 					}
 				}else {
@@ -648,30 +659,30 @@ public class Main extends JavaPlugin implements Listener{
 				}
 			}else if(args[0].equalsIgnoreCase("build")){
 				if(sender.hasPermission("rollercoaster.createtrack")) {
-				if(args.length == 2){
-					String trainname = args[1];
-					Track t = new Track();
-					t.name = trainname;
-					CustomPath path = CustomPathBuilder.build();
-					t.locstosave = (ArrayList<Location>) CustomPathBuilder.vectorList;
-					t.origin = CustomPathBuilder.origin;
-					List<PathPoint> as = new ArrayList<PathPoint>();
-					for (int i = 0; i <= path.getPathLenght(); i++) {
-						Location loc = path.getPathPosition((double) i);
-						loc.setPitch(0);
-						loc.setYaw(0);
-						as.add(new PathPoint(loc.getX(),loc.getY(),loc.getZ(),0D));
+					if(args.length == 2){
+						String trainname = args[1];
+						Track t = new Track();
+						t.name = trainname;
+						CustomPath path = CustomPathBuilder.build();
+						t.locstosave = (ArrayList<Location>) CustomPathBuilder.vectorList;
+						t.origin = CustomPathBuilder.origin;
+						List<PathPoint> as = new ArrayList<PathPoint>();
+						for (int i = 0; i <= path.getPathLenght(); i++) {
+							Location loc = path.getPathPosition((double) i);
+							loc.setPitch(0);
+							loc.setYaw(0);
+							as.add(new PathPoint(loc.getX(),loc.getY(),loc.getZ(),0D));
+						}
+						for(ArmorStand ar : pointsVisible){
+							ar.remove();
+						}
+						t.locs = (ArrayList<PathPoint>) as;
+						tracks.add(t);
+						sal.saveTrack(t);
+						sender.sendMessage(getMessage("Message.pathBuild"));
+					}else{
+						sender.sendMessage(getMessage("Usage.pathBuild"));
 					}
-					for(ArmorStand ar : pointsVisible){
-						ar.remove();
-					}
-					t.locs = (ArrayList<PathPoint>) as;
-					tracks.add(t);
-					sal.saveTrack(t);
-					sender.sendMessage(getMessage("Message.pathBuild"));
-				}else{
-					sender.sendMessage(getMessage("Usage.pathBuild"));
-				}
 				}else {
 					sender.sendMessage(getMessage("Error.noPermissions"));
 				}

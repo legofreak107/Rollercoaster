@@ -37,10 +37,12 @@ public class PlayerInteractAtEntity implements Listener{
 				Train t = s.train;
 				e.setCancelled(true);
 				if(!s.locked || !t.locked){
-					TrainEnterEvent event = new TrainEnterEvent("TrainEnterEvent", t, p, s);
-					Bukkit.getServer().getPluginManager().callEvent(event);
-					e.setCancelled(true);
-					en.addPassenger(p);
+					if(!p.isInsideVehicle()){
+						TrainEnterEvent event = new TrainEnterEvent("TrainEnterEvent", t, p, s);
+						Bukkit.getServer().getPluginManager().callEvent(event);
+						e.setCancelled(true);
+						en.addPassenger(p);
+					}
 				}
 			}else if(en.getCustomName().contains("RollerCoaster")){
 				e.setCancelled(true);
