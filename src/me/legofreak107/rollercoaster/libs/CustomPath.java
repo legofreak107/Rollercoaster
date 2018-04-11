@@ -7,24 +7,30 @@ import java.util.Map.Entry;
 
 import org.bukkit.Location;
 
-public class CustomPath extends Moveable {
+public class CustomPath {
 
-	private List<Location> preLocation = new ArrayList<Location>();
-	private HashMap<Moveable, Double> childrenMap = new HashMap<Moveable, Double>();
 	public Location[] pathPoints;
 
-	private double speed = 0.25;
-	int levelOfDetail = 30;
-	boolean stopAtTheEnd = false;
+	private List<Location> preLocation = new ArrayList<Location>();
+	int levelOfDetail = 60;
 	public CustomPath path = null;
 	
 	public CustomPath(Location vector, List<Location> vectorList) {
 		setOrigin(vector);
 		setPreLocation(vectorList);
-		setType(MoveableType.PATH);
 		generatePath();
 	}
 
+	private static Location origin;
+	
+	public static Location getOrigin() {
+		return origin.clone();
+	}
+
+	public void setOrigin(Location origin) {
+		this.origin = origin.clone();
+	}
+	
 	public int getPathLenght() {
 		return getPreLocation().size() * levelOfDetail;
 	}
@@ -68,68 +74,11 @@ public class CustomPath extends Moveable {
 		}
 	}
 
-	public void addChild(Moveable child) {
-		getChildren().add(child);
-		getChildrenMap().put(child, 0.0);
-	}
-
-	public void addChild(Moveable child, double progress) {
-		while (progress > getPathLenght()) {
-			progress -= getPathLenght();
-		}
-		getChildren().add(child);
-		getChildrenMap().put(child, progress);
-	}
-
-	@Override
-	public void moveTo(Location vector) {
-		setOrigin(vector);
-	}
-
-	@Override
-	public void runTick(boolean started) {
-		if (started) {
-			for (Moveable child : getChildrenMap().keySet()) {
-				double progress = getChildrenMap().get(child) + getSpeed();
-				if (progress > getPathLenght()) {
-					if (stopAtTheEnd) {
-						progress = getPathLenght();
-					} else {
-						progress -= getPathLenght();
-					}
-				}
-				getChildrenMap().put(child, progress);
-			}
-		}
-		for (Entry<Moveable, Double> child : getChildrenMap().entrySet()) {
-			if (started) {
-				child.getKey().moveTo(getPathPosition(child.getValue()));
-			}
-			child.getKey().runTick(started);
-		}
-	}
-
 	public List<Location> getPreLocation() {
 		return preLocation;
 	}
 
 	public void setPreLocation(List<Location> preLocation) {
 		this.preLocation = preLocation;
-	}
-
-	public HashMap<Moveable, Double> getChildrenMap() {
-		return childrenMap;
-	}
-
-	public void setChildrenMap(HashMap<Moveable, Double> childrenMap) {
-		this.childrenMap = childrenMap;
-	}
-
-	public double getSpeed() {
-		return speed;
-	}
-
-	public void setSpeed(double speed) {
-		this.speed = speed;
 	}
 }
